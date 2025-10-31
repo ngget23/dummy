@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sign Up – StudyHub</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="config.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <h1>StudyHub • Sign Up</h1>
+    <nav class="nav">
+      <a href="index.html">Home</a>
+      <a href="login.html">Login</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="panel" style="max-width:400px;margin:auto;">
+      <h2>Create Account</h2>
+      <form id="signupForm" class="stack">
+        <label>Full Name<input id="name" required /></label>
+        <label>Email<input id="email" type="email" required /></label>
+        <label>Username<input id="username" required /></label>
+        <label>Password<input id="password" type="password" minlength="6" required /></label>
+        <button type="submit">Sign Up</button>
+      </form>
+      <p class="muted" id="msg"></p>
+    </section>
+  </main>
+
+  <script>
+    // Sign-up using the same localStorage “database”
+    document.getElementById('signupForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      const msg = document.getElementById('msg');
+
+      try {
+        const users = JSON.parse(localStorage.getItem(AppKeys.USERS) || '[]');
+        if (users.some(u => u.username.toLowerCase() === username.toLowerCase()))
+          throw 'Username already exists';
+
+        // hash password
+        const enc = new TextEncoder().encode(password);
+        const digest = await crypto.subtle.digest('SHA-256', enc);
+        const hash = Array.from(new Uint8Array(digest))
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('');
+
+        const now = new Date().toISOString();
+        const newUser = {
+          username,
+          name,
+          email,
+          passHash: hash,
+          role: 'user',
+          createdAt: now,
+          updatedAt: now
+        };
+        users.push(newUser);
+        localStorage.setItem(AppKeys.USERS, JSON.stringify(users));
+
+        msg.style.color = 'limegreen';
+        msg.textContent = '✅ Account created! Redirecting to login...';
+        setTimeout(() => (window.location.href = 'login.html'), 1500);
+      } catch (err) {
+        msg.style.color = 'red';
+        msg.textContent = '❌ ' + err;
+      }
+    });
+  </script>
+</body>
+</html>
