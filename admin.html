@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>/admin • StudyShop Admin</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="config.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div>/admin • StudyShop Admin</div>
+    <div class="nav"><a href="index.html">Exit admin</a></div>
+  </header>
+
+  <main class="container">
+    <div class="cols">
+      <section class="panel">
+        <h3>Admin Login</h3>
+        <div id="status" class="muted">Not signed in</div>
+        <form id="adminLogin" class="stack">
+          <label>Username<input id="adminUser" /></label>
+          <label>Password<input id="adminPass" type="password" /></label>
+          <div class="row">
+            <button type="submit">Sign in</button>
+            <button id="btnSignOut" type="button" class="warn">Sign out</button>
+          </div>
+        </form>
+        <hr />
+        <h4>Practice options</h4>
+        <label class="checkbox"><input id="vulnMode" type="checkbox" /> Vulnerable mode (for testing)</label>
+        <p class="muted">Vulnerable mode disables some client side checks. Use only locally.</p>
+      </section>
+
+      <section class="panel" id="mainPanel">
+        <h3>Product catalog</h3>
+        <div id="adminTools">
+          <div class="row">
+            <input id="newTitle" placeholder="Title" />
+            <input id="newPrice" placeholder="Price" />
+            <button id="addProduct">Add</button>
+          </div>
+          <table id="prodTable"><thead><tr><th>ID</th><th>Title</th><th>Price</th><th></th></tr></thead><tbody></tbody></table>
+        </div>
+        <p class="muted">This admin panel only works in this demo. No network calls occur.</p>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    (function(){
+      function isAdminSignedIn(){
+        const s=localStorage.getItem(AppKeys.SESSION); if(!s) return false;
+        try{
+          const u=JSON.parse(s);
+          const users=JSON.parse(localStorage.getItem(AppKeys.USERS)||'[]');
+          return users.some(x=>x.username===u.username && x.role==='admin');
+        }catch{return false}
+      }
+      function setStatus(){ document.getElementById('status').textContent = isAdminSignedIn() ? 'Signed in as admin' : 'Not signed in'; }
+      function loadProducts(){ try{return JSON.parse(localStorage.getItem(AppKeys.PRODUCTS)||'[]')}catch{return []} }
+      function saveProducts(list){ localStorage.setItem(AppKeys.PRODUCTS,JSON.stringify(list)) }
+      function render(){
+        const tbody=document.querySelector('#prodTable tbody'); tbody.innerHTML='';
+        loadProducts().forEach(p=>{
+          const tr=document.createElement('tr');
+          tr.innerHTML=`<td>${p.id}</td><td>${escapeHtml(p.title)}</td><td>${escapeHtml(p.price||'')}</td><td><button data-id="${p.id}" class="del">Delete</button></td>`;
+          tbody.appendChild(tr);
+        });
+        setStatus();
+      }
+      function escapeHtml(s){return String(s).replace(/[&<>\"]/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;' }[c]||c))}
+
+      // Admin sign in
+      document.getElementById('adminLogin').addEventListener('submit',async e=>{
+        e.preventDefault();
+        const user=document.getElementById('adminUser').value.trim();
+        const pass=document.getElementById('adminPass').value;
+        try{
+          const users=JSON.parse(localStorage.getItem(AppKeys.USERS)||'[]');
+          const found=users.find(u=>u.username.toLowerCase()===user.toLowerCase());
+          if(!found) throw 'User not found';
+          if(found.role!=='admin') throw 'Not an admin';
+          const vuln=document.getElementById('vulnMode').checked;
+          if(!vuln){
+            const enc=new TextEncoder().encode(pass);
+            const digest=await crypto.subtle.digest('SHA-256',enc);
+            const hash=Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('');
+            if(hash!==found.passHash) throw 'Invalid password';
+          }
+          localStorage.setItem(AppKeys.SESSION,JSON.stringify({username:found.username}));
+          alert('Signed in as admin');
+          render();
+        }catch(err){ alert('Sign in error: '+err) }
+      });
+
+      document.getElementById('btnSignOut').addEventListener('click',()=>{localStorage.removeItem(AppKeys.SESSION); render();});
+
+      // Add product
+      document.getElementById('addProduct').addEventListener('click',()=>{
+        if(!isAdminSignedIn() && !document.getElementById('vulnMode').checked){ alert('Admin not signed in'); return }
+        const title=document.getElementById('newTitle').value.trim(); const price=document.getElementById('newPrice').value.trim()||'Free';
+        if(!title){ alert('Enter title'); return }
+        const id='p'+Date.now().toString(36).slice(-6);
+        const products=loadProducts();
+        const vuln=document.getElementById('vulnMode').checked;
+        const entry={id,title: vuln? title : title.replace(/[<>"&]/g,''), price, desc: 'Added by admin'};
+        products.push(entry); saveProducts(products); render();
+      });
+
+      document.querySelector('#prodTable').addEventListener('click',e=>{
+        if(e.target.classList.contains('del')){
+          const id=e.target.dataset.id; const products=loadProducts().filter(p=>p.id!==id); saveProducts(products); render();
+        }
+      });
+
+      render();
+    })();
+  </script>
+</body>
+</html>

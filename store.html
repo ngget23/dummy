@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>StudyShop • Catalog</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="config.js"></script>
+</head>
+<body>
+  <header class="site-header light">
+    <div>StudyShop • Catalog</div>
+    <div class="nav"><a href="index.html">Home</a></div>
+  </header>
+  <main class="container">
+    <p class="muted">This is a dummy store. You cannot actually buy products.</p>
+    <div id="catalog" class="grid"></div>
+  </main>
+
+  <script>
+    (function(){
+      function loadProducts(){
+        try{ return JSON.parse(localStorage.getItem(AppKeys.PRODUCTS)||'[]'); }catch{ return []; }
+      }
+      function render(){
+        const container=document.getElementById('catalog'); container.innerHTML='';
+        loadProducts().forEach(p=>{
+          const div=document.createElement('div'); div.className='card';
+          div.innerHTML=`<h3>${escapeHtml(p.title)}</h3><p class="muted">${escapeHtml(p.desc||'')}</p><p><strong>${escapeHtml(p.price||'')}</strong></p><div class="muted">ID: <span class="code">${p.id}</span></div>`;
+          container.appendChild(div);
+        });
+      }
+      function escapeHtml(s){ return String(s).replace(/[&<>\"]/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;' }[c]||c)); }
+      render();
+    })();
+  </script>
+</body>
+</html>

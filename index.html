@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>StudyHub • Demo Login (Client-side)</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="config.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <h1 class="logo">StudyHub • Demo</h1>
+    <nav class="nav">
+      <a href="index.html">Home</a>
+      <a href="store.html">Store</a>
+      <a href="admin.html">/admin</a>
+      <a href="tests.html">/tests</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <h2>Welcome</h2>
+    <p>This demo shows a client-side dummy store and a separate admin page at <code>/admin</code>.</p>
+    <p>Open <code>admin.html</code> to practice admin flows and security testing locally.</p>
+    <p>Default admin: <strong>admin</strong> / <strong>Admin123!</strong></p>
+
+    <section class="panel">
+      <h3>Quick checks</h3>
+      <ul id="quickChecks" class="muted"></ul>
+    </section>
+  </main>
+
+  <script>
+    (function(){
+      const out=document.getElementById('quickChecks');
+      function li(msg, ok){ const li=document.createElement('li'); li.textContent=(ok? '✅ ':'❌ ')+msg; out.appendChild(li); }
+      li('AppKeys available', !!(window.AppKeys && AppKeys.PRODUCTS && AppKeys.USERS && AppKeys.SESSION));
+      try{ const users=JSON.parse(localStorage.getItem(AppKeys.USERS)||'[]'); li('Seed admin exists', users.some(u=>u.username==='admin' && u.role==='admin')); }catch{ li('Users read failed', false); }
+      try{ const prods=JSON.parse(localStorage.getItem(AppKeys.PRODUCTS)||'[]'); li('Products array present', Array.isArray(prods)); }catch{ li('Products read failed', false); }
+    })();
+  </script>
+</body>
+</html>

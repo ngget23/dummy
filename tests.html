@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Demo Tests</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="config.js"></script>
+</head>
+<body>
+  <header class="site-header"><div>/tests • Self-checks</div><div class="nav"><a href="index.html">Home</a></div></header>
+  <main class="container">
+    <section class="panel">
+      <h3>Unit tests</h3>
+      <ol id="results"></ol>
+    </section>
+  </main>
+  <script>
+    (function(){
+      const R=document.getElementById('results'); let pass=0,fail=0;
+      function t(name,fn){ const li=document.createElement('li'); try{ fn(); li.textContent='✅ '+name; pass++; }catch(e){ li.textContent='❌ '+name+' — '+e; fail++; } R.appendChild(li); }
+      function assert(cond,msg){ if(!cond) throw msg||'Assertion failed'; }
+
+      // Tests
+      t('AppKeys singleton present', ()=>{ assert(!!window.AppKeys); });
+      t('Users array exists and seeded admin', ()=>{ const users=JSON.parse(localStorage.getItem(AppKeys.USERS)||'[]'); assert(Array.isArray(users)); assert(users.some(u=>u.username==='admin' && u.role==='admin')); });
+      t('Products array exists', ()=>{ const prods=JSON.parse(localStorage.getItem(AppKeys.PRODUCTS)||'[]'); assert(Array.isArray(prods)); });
+      t('Admin session key writable', ()=>{ localStorage.setItem(AppKeys.SESSION,JSON.stringify({username:'admin'})); const s=localStorage.getItem(AppKeys.SESSION); assert(!!s); });
+
+      const summary=document.createElement('p'); summary.className='muted'; summary.textContent=`Passed ${pass} / ${pass+fail}`; R.parentElement.appendChild(summary);
+    })();
+  </script>
+</body>
+</html>
