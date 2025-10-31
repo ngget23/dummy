@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login - StudyHub</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="config.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <h1>StudyHub • Login</h1>
+    <nav class="nav">
+      <a href="index.html">Home</a>
+      <a href="store.html">Store</a>
+      <a href="admin.html">/admin</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="panel" style="max-width:400px;margin:auto;">
+      <h2>Log In</h2>
+      <form id="loginForm" class="stack">
+        <label>Username<input id="username" required /></label>
+        <label>Password<input id="password" type="password" required /></label>
+        <button type="submit">Sign In</button>
+      </form>
+      <p class="muted" id="msg"></p>
+    </section>
+  </main>
+
+  <script>
+    // basic login using localStorage users (acts as a mini database)
+    document.getElementById('loginForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      const msg = document.getElementById('msg');
+
+      try {
+        const users = JSON.parse(localStorage.getItem(AppKeys.USERS) || '[]');
+        const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+        if (!user) throw 'User not found';
+
+        const enc = new TextEncoder().encode(password);
+        const digest = await crypto.subtle.digest('SHA-256', enc);
+        const hash = Array.from(new Uint8Array(digest))
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('');
+
+        if (hash !== user.passHash) throw 'Invalid password';
+
+        localStorage.setItem(AppKeys.SESSION, JSON.stringify({ username: user.username }));
+        msg.style.color = 'limegreen';
+        msg.textContent = '✅ Login successful! Redirecting...';
+        setTimeout(() => window.location.href = 'index.html', 1500);
+      } catch (err) {
+        msg.style.color = 'red';
+        msg.textContent = '❌ ' + err;
+      }
+    });
+  </script>
+</body>
+</html>
